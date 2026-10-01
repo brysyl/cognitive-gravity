@@ -11,8 +11,8 @@ logger = logging.getLogger("cognitive_gravity.meta_llama")
 
 class MetaLlamaSynthesizer:
     """
-    Low-latency semantic synthesis class that turns two concepts into a higher-order knowledge node
-    using Meta Llama via the Meta API or an OpenAI-compatible endpoint.
+    Low-latency semantic synthesis using Meta Llama's API.
+    Falls back to deterministic synthesis if the API is unavailable or misconfigured.
     """
 
     def __init__(self) -> None:
@@ -23,7 +23,7 @@ class MetaLlamaSynthesizer:
 
     async def synthesize_collision(self, concept_a: str, concept_b: str) -> Dict[str, Any]:
         if not self.api_key:
-            logger.warning("META_API_KEY is missing. Falling back to deterministic synthesis.")
+            logger.warning("META_API_KEY missing. Using fallback synthesis.")
             return self._fallback_payload(concept_a, concept_b)
 
         prompt = (
@@ -84,7 +84,7 @@ class MetaLlamaSynthesizer:
                     "gravity_weight": float(parsed.get("gravity_weight") or 1.5),
                 }
         except Exception as exc:
-            logger.exception("Meta Llama synthesis failed. Falling back to deterministic synthesis.")
+            logger.exception("Meta Llama synthesis failed; using fallback.")
             return self._fallback_payload(concept_a, concept_b, reason=str(exc))
 
     def _fallback_title(self, concept_a: str, concept_b: str) -> str:

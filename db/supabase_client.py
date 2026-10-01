@@ -10,8 +10,8 @@ logger = logging.getLogger("cognitive_gravity.supabase")
 
 class SupabaseVectorStore:
     """
-    Stores semantic memory nodes and their embedding vectors in Supabase pgvector.
-    This version uses a deterministic 768-dim fallback if no embedding service is configured.
+    Stores semantic memory nodes in Supabase pgvector. If embeddings are unavailable,
+    falls back to a deterministic 768-dimension vector to keep the system alive.
     """
 
     def __init__(self) -> None:
@@ -34,20 +34,19 @@ class SupabaseVectorStore:
                 response = await client.post(
                     f\"{os.getenv('META_API_BASE_URL', 'https://api.llama.com/v1').rstrip('/')}/embeddings\",
                     headers={
-                        "Authorization": f"Bearer {meta_key}",
-                        "Content-Type": "application/json",
+                        \"Authorization\": f\"Bearer {meta_key}\",
+                        \"Content-Type\": \"application/json\",
                     },
                     json={
-                        "model": os.getenv("META_EMBED_MODEL", "Llama-3.1-70B-Instruct"),
-                        "input": text,
+                        \"model\": os.getenv("META_EMBED_MODEL", "Llama-3.1-70B-Instruct"),
+                        \"input\": text,
                     },
                 )
                 response.raise_for_status()
                 payload = response.json()
-                embedding = payload.get("data", [{}])[0].get("embedding", [])
+                embedding = payload.get(\"data\", [{}])[0].get(\"embedding\", [])
                 if embedding:
                     return [float(v) for v in embedding]
-
         except Exception as exc:
             logger.warning("Vector embedding generation failed: %s", exc)
 
@@ -55,19 +54,18 @@ class SupabaseVectorStore:
 
     async def store_node(self, node: Dict[str, Any], session_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         if self.client is None:
-            logger.warning("Supabase not configured; skipping semantic node persistence.")
+            logger.warning("Supabase not configured. Skipping persistence.")
             return None
 
-        text = " ".join(
-            [
-                str(node.get("title", "")),
-                str(node.get("summary_tagline", "")),
-                str(node.get("concept_a", "")),
-                str(node.get("concept_b", "")),
-            ]
-        )
+        text = " ".join([
+            str(node.get("title", "")),
+            str(node.get("summary_tagline", "")),
+            str(node.get("concept_a", "")),
+            str(node.get("concept_b", "")),
+        ])
 
         embedding = await self._embed_text(text)
+
         payload = {
             "session_id": session_id,
             "title": node.get("title", "Untitled Concept"),
@@ -85,5 +83,5 @@ class SupabaseVectorStore:
             response = self.client.table("semantic_nodes").insert(payload).execute()
             return response.data[0] if response.data else payload
         except Exception as exc:
-            logger.exception("Supabase insert failed for semantic node: %s", exc)
+            logger.exception("Supabase insert failed: %s", exc)
             return payload

@@ -6,9 +6,7 @@ import { HandInteractionSystem } from './systems/HandInteractionSystem';
 import { WebSocketClient } from './services/WebSocketClient';
 
 const appRoot = document.getElementById('app');
-if (!appRoot) {
-  throw new Error('Missing root element #app');
-}
+if (!appRoot) throw new Error('Missing root element #app');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#070b17');
@@ -58,10 +56,10 @@ const firstNode = createNode('Cognition', [1, 0.3, 0.5], new THREE.Vector3(-0.22
 const secondNode = createNode('Motion', [0.7, 1, 0.2], new THREE.Vector3(0.17, -0.08, -0.12));
 const thirdNode = createNode('Narrative', [0.2, 0.7, 1], new THREE.Vector3(0.03, 0.18, -0.24));
 
-const wsClient = new WebSocketClient('wss://example.com/ws/synthesis');
-wsClient.on('message', (message) => {
-  console.info('Synthesis message:', message);
-});
+const wsClient = new WebSocketClient('ws://localhost:8080/ws/synthesis');
+wsClient.on('open', () => console.info('Backend websocket connected'));
+wsClient.on('message', (message) => console.info('Synthesis message:', message));
+wsClient.connect();
 
 const clock = new THREE.Clock();
 

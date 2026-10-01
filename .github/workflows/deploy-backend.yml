@@ -13,19 +13,19 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Google Cloud SDK
+      - name: Setup Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Authenticate docker with GCR
+      - name: Configure Docker
         run: gcloud auth configure-docker --quiet
 
-      - name: Build backend image
+      - name: Build image
         run: |
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/cognitive-gravity-backend:${{ github.sha }} .
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/cognitive-gravity-backend:${{ github.sha }}

@@ -1,34 +1,29 @@
-# Python bytecode
+# Python
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
 
-# Environment files
+# Env
 .env
 .env.*
-.env.local
+!.env.example
 
-# Node/Vite
+# Node
 node_modules/
 dist/
 .vite/
+coverage/
+.npm/
 
-# OS/system
+# OS / IDE
 .DS_Store
 Thumbs.db
-
-# Logs
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Coverage
-coverage/
-
-# Editor settings
 .vscode/
 .idea/
 
-# Build artifacts
+# Build
 build/
 out/

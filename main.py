@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title="Cognitive Gravity Backend",
-    description="Agentic volumetric synthesis orchestration service for WebXR concept generation.",
+    description="Agentic volumetric synthesis service for spatial knowledge graph generation.",
     version="0.1.0",
 )
 
