@@ -1,0 +1,43 @@
+name: Deploy Backend
+
+on:
+  repository_dispatch:
+    types: [backend-deploy]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Authenticate docker with GCR
+        run: gcloud auth configure-docker --quiet
+
+      - name: Build backend image
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/cognitive-gravity-backend:${{ github.sha }} .
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/cognitive-gravity-backend:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy cognitive-gravity-backend \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/cognitive-gravity-backend:${{ github.sha }} \
+            --platform managed \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --memory 1Gi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 4
