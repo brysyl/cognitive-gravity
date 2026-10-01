@@ -3,15 +3,13 @@ MIT License
 Copyright (c) 2026 Bright Sylvester
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files### Method 1: Using Terminal Commands
-
-Run the following command block inside your repository root directory to generate the `LICENSE` file, stage it, and push it to GitHub:
-
-```bash
-# 1. Create the LICENSE file with your copyright details
+of this software and associated documentation files (the "Software"), to deal
+in```bash
 cat << 'EOF' > LICENSE
 MIT License
 
 Copyright (c) 2026 Bright Sylvester
 
-Permission is hereby granted, free of charge, to any person
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without
