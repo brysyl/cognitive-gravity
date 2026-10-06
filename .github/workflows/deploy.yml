@@ -37,7 +37,7 @@ jobs:
         run: |
           IMAGE_URI="${{ env.GAR_LOCATION }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
           LATEST_URI="${{ env.GAR_LOCATION }}/${{ env.SERVICE_NAME }}:latest"
-          docker build -t $IMAGE_URI -t $LATEST_URI ./backend
+          docker build -t $IMAGE_URI -t $LATEST_URI .
           docker push $IMAGE_URI
           docker push $LATEST_URI
 
