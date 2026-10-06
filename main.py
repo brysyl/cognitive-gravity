@@ -122,4 +122,5 @@ async def root():
 
 @app.post("/store-node")
 async def store_node_endpoint(node: dict, session_id: Optional[str] = None):
-    return await store_node(node=node, session_id=session_id)
+    v_store = SupabaseVectorStore()
+    return await v_store.store_node(node=node, session_id=session_id)
