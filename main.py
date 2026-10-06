@@ -121,6 +121,8 @@ async def root():
     return {"status": "online", "service": "cognitive-gravity", "docs": "/docs"}
 
 @app.post("/store-node")
-async def store_node_endpoint(node: dict, session_id: Optional[str] = None):
+async def store_node_endpoint(payload: dict):
     v_store = SupabaseVectorStore()
-    return await v_store.store_node(node=node, session_id=session_id)
+    node_data = payload.get("node", payload)
+    session_id = payload.get("session_id")
+    return await v_store.store_node(node=node_data, session_id=session_id)
