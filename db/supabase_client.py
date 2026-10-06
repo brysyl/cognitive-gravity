@@ -8,6 +8,7 @@ from supabase import create_client
 
 logger = logging.getLogger("cognitive_gravity.supabase")
 
+
 class SupabaseVectorStore:
     """
     Stores semantic memory nodes in Supabase pgvector. If embeddings are unavailable,
@@ -30,21 +31,24 @@ class SupabaseVectorStore:
             if not meta_key:
                 return [0.0] * 768
 
+            base_url = os.getenv("META_API_BASE_URL", "https://api.llama.com/v1").rstrip("/")
+            endpoint_url = f"{base_url}/embeddings"
+
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
-                    f\"{os.getenv('META_API_BASE_URL', 'https://api.llama.com/v1').rstrip('/')}/embeddings\",
+                    endpoint_url,
                     headers={
-                        \"Authorization\": f\"Bearer {meta_key}\",
-                        \"Content-Type\": \"application/json\",
+                        "Authorization": f"Bearer {meta_key}",
+                        "Content-Type": "application/json",
                     },
                     json={
-                        \"model\": os.getenv("META_EMBED_MODEL", "Llama-3.1-70B-Instruct"),
-                        \"input\": text,
+                        "model": os.getenv("META_EMBED_MODEL", "Llama-3.1-70B-Instruct"),
+                        "input": text,
                     },
                 )
                 response.raise_for_status()
                 payload = response.json()
-                embedding = payload.get(\"data\", [{}])[0].get(\"embedding\", [])
+                embedding = payload.get("data", [{}])[0].get("embedding", [])
                 if embedding:
                     return [float(v) for v in embedding]
         except Exception as exc:
