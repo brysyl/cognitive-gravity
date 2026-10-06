@@ -119,3 +119,7 @@ if __name__ == "__main__":
 @app.get("/")
 async def root():
     return {"status": "online", "service": "cognitive-gravity", "docs": "/docs"}
+
+@app.post("/store-node")
+async def store_node_endpoint(node: dict, session_id: Optional[str] = None):
+    return await store_node(node=node, session_id=session_id)
