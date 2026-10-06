@@ -115,3 +115,7 @@ async def ws_synthesis(websocket: WebSocket) -> None:
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)
+
+@app.get("/")
+async def root():
+    return {"status": "online", "service": "cognitive-gravity", "docs": "/docs"}
