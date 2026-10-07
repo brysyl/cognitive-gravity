@@ -107,7 +107,7 @@ npm run dev
 Launch the provided local URL in a WebXR-compatible browser or the Meta XR Simulator.
 🌍 CI/CD & Deployment
 This repository utilizes headless deployments via GitHub Actions.
- * Frontend (Vercel): Triggered automatically on push to main. Deploys the Vite optimized build.
+ * Frontend (Netlify): Triggered automatically on push to main. Deploys the Vite optimized build.
  * Backend (Google Cloud Run): Containerized via a multi-stage Alpine Dockerfile. Cloud Run handles automatic scaling and TLS termination for the FastAPI WebSocket engine.
 # To trigger a manual backend deployment via CLI:
 gh workflow run deploy-backend.yml
