@@ -33,26 +33,22 @@ Cognitive Gravity operates on a unified, single-domain microservice architecture
 
 ---
 
-```
 flowchart TB
-    %% Styling configurations
-    classDef client fill:#2D3748,stroke:#4A5568,stroke-width:2px,color:#fff
-    classDef cloud fill:#0D47A1,stroke:#1976D2,stroke-width:2px,color:#fff
-    classDef ai fill:#00695C,stroke:#00897B,stroke-width:2px,color:#fff
-    classDef repo fill:#424242,stroke:#616161,stroke-width:2px,color:#fff
+    classDef client fill:#1E293B,stroke:#38BDF8,stroke-width:2px,color:#fff
+    classDef cloud fill:#0F172A,stroke:#818CF8,stroke-width:2px,color:#fff
+    classDef ai fill:#064E3B,stroke:#34D399,stroke-width:2px,color:#fff
+    classDef repo fill:#27272A,stroke:#A1A1AA,stroke-width:2px,color:#fff
 
-    %% GitHub Monorepo Structure
     subgraph Repository ["GitHub Monorepo (Brysyl/cognitive-gravity)"]
         direction LR
-        FE_Code["/cognitive-gravity-webxr<br/>(Three.js / TS)"]
-        BE_Code["/cognitive-gravity-backend<br/>(FastAPI / Python)"]
+        FE_Code["/cognitive-gravity-webxr<br/>(Three.js / WebXR Frontend)"]
+        BE_Code["/cognitive-gravity-backend<br/>(FastAPI / Python Backend)"]
     end
     class Repository repo
 
-    %% Client Layer (Frontend)
     subgraph Client ["Client Interface (Meta Quest / WebXR Browser)"]
         direction TB
-        UI["WebXR Spatial UI<br/>(Three.js)"]
+        UI["WebXR Spatial UI<br/>(Three.js Engine)"]
         Gesture["Gesture Engine<br/>(Pinch-to-Synthesize, 4cm threshold)"]
         Debug["Visual Debugging<br/>(Coordinate Spheres)"]
         
@@ -61,7 +57,6 @@ flowchart TB
     end
     class Client client
 
-    %% Cloud Infrastructure (Backend)
     subgraph GCP ["Google Cloud Platform (Cloud Run)"]
         direction TB
         Container["Docker Container<br/>(python:3.11-slim)"]
@@ -73,25 +68,21 @@ flowchart TB
     end
     class GCP cloud
 
-    %% AI Provider Layer
     subgraph AI ["AI Inference Engine"]
         direction TB
         Groq["Groq API Endpoint<br/>(https://api.groq.com/openai/v1)"]
-        Llama["Meta Llama-3.3-70B-Versatile<br/>(Strictly Meta Llama-only)"]
+        Llama["Meta Llama-3.3-70B-Versatile<br/>(Strictly Meta Llama-Only)"]
         
         Groq --> Llama
     end
     class AI ai
 
-    %% Network Connections
     FE_Code -.->|Deploys to| Client
     BE_Code -.->|Builds & Deploys to| GCP
 
     UI <==>|HTTPS / REST API| FastAPI
-    FastAPI <==>|Environment Variables & API Key Auth
-    | Groq
+    FastAPI <==>|Environment Variables & API Key Auth| Groq
 
-```
 ---
 
 ## 🚀 Local Development
