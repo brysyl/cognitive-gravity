@@ -1,108 +1,284 @@
+import WebXRPolyfill from 'webxr-polyfill';
+new WebXRPolyfill();
+
 import * as THREE from 'three';
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js';
 
-import { GravitationalNode, type SemanticNodeData } from './components/GravitationalNode';
-import { GravityPhysicsSystem } from './systems/GravityPhysicsSystem';
-import { HandInteractionSystem } from './systems/HandInteractionSystem';
-import { WebSocketClient } from './services/WebSocketClient';
+const BACKEND_URL = 'https://cognitive-gravity-backend-x2n3kru2ja-uc.a.run.app';
 
-const appRoot = document.getElementById('app');
-if (!appRoot) throw new Error('Missing root element #app');
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color('#070b17');
-
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 50);
-camera.position.set(0, 1.6, 2.2);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor('#070b17');
-appRoot.appendChild(renderer.domElement);
-
-const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-scene.add(ambient);
-
-const pointLight = new THREE.PointLight(0x7ec8ff, 1.1, 10);
-pointLight.position.set(0, 1.6, 1.0);
-scene.add(pointLight);
-
-const gravitySystem = new GravityPhysicsSystem();
-const handSystem = new HandInteractionSystem();
-const nodes: GravitationalNode[] = [];
-
-function createNode(label: string, semanticVector: number[], position: THREE.Vector3): GravitationalNode {
-  const nodeData: SemanticNodeData = {
-    id: `${label}-${Math.random().toString(36).slice(2, 9)}`,
-    mass: 1 + Math.random() * 0.8,
-    semanticVector,
-    label,
-    velocity: new THREE.Vector3(
-      (Math.random() - 0.5) * 0.02,
-      (Math.random() - 0.5) * 0.02,
-      (Math.random() - 0.5) * 0.02,
-    ),
-    position,
-    metadata: { cluster: 'default' },
-  };
-
-  const node = new GravitationalNode(nodeData);
-  scene.add(node.mesh);
-  nodes.push(node);
-  return node;
+interface NodeData {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  z: number;
+  category?: string;
+  isSynthesized?: boolean;
 }
 
-const firstNode = createNode('Cognition', [1, 0.3, 0.5], new THREE.Vector3(-0.22, 0.1, -0.15));
-const secondNode = createNode('Motion', [0.7, 1, 0.2], new THREE.Vector3(0.17, -0.08, -0.12));
-const thirdNode = createNode('Narrative', [0.2, 0.7, 1], new THREE.Vector3(0.03, 0.18, -0.24));
+// 1. HUD Overlay
+const infoCard = document.createElement('div');
+infoCard.id = 'node-info-card';
+infoCard.style.position = 'absolute';
+infoCard.style.top = '20px';
+infoCard.style.left = '20px';
+infoCard.style.padding = '12px 16px';
+infoCard.style.background = 'rgba(5, 10, 25, 0.88)';
+infoCard.style.color = '#00ff88';
+infoCard.style.fontFamily = 'monospace';
+infoCard.style.fontSize = '13px';
+infoCard.style.borderRadius = '8px';
+infoCard.style.border = '1px solid #00ff88';
+infoCard.style.boxShadow = '0 0 15px rgba(0, 255, 136, 0.2)';
+infoCard.style.pointerEvents = 'none';
+infoCard.style.zIndex = '1000';
+infoCard.innerHTML = '<strong>Cognitive Gravity WebXR</strong><br/>Drag or pinch two nodes together to collide & synthesize.';
+document.body.appendChild(infoCard);
 
-const wsClient = new WebSocketClient('ws://localhost:8080/ws/synthesis');
-wsClient.on('open', () => console.info('Backend websocket connected'));
-wsClient.on('message', (message) => console.info('Synthesis message:', message));
-wsClient.connect();
+// 2. Scene & Renderer Setup
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x03030c);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 1.6, 3.5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.xr.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+document.body.appendChild(VRButton.createButton(renderer, {
+  optionalFeatures: ['hand-tracking']
+}));
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.position.set(3, 5, 3);
+scene.add(dirLight, new THREE.AmbientLight(0x223355, 1.5));
 
 const clock = new THREE.Clock();
 
-function animate() {
-  const dt = Math.min(clock.getDelta(), 0.033);
+// 3. Native Quest Hand Models
+const handModelFactory = new XRHandModelFactory();
+const hand1 = renderer.xr.getHand(0);
+const hand2 = renderer.xr.getHand(1);
 
-  gravitySystem.update(nodes, dt);
+hand1.add(handModelFactory.createHandModel(hand1, 'mesh'));
+hand2.add(handModelFactory.createHandModel(hand2, 'mesh'));
 
-  handSystem.update(
-    {
-      left: {
-        indexTip: new THREE.Vector3(-0.08, 0.03, -0.12),
-        thumbTip: new THREE.Vector3(-0.02, 0.1, -0.12),
-      },
-      right: {
-        indexTip: new THREE.Vector3(0.08, 0.03, -0.12),
-        thumbTip: new THREE.Vector3(0.02, 0.1, -0.12),
-      },
-    },
-    nodes,
-  );
+scene.add(hand1);
+scene.add(hand2);
 
-  for (const node of nodes) {
-    node.updateVisuals();
+// 4. State & Node Store
+const nodeMeshes: THREE.Mesh[] = [];
+const activeCollisions = new Set<string>();
+let constellationLines: THREE.LineSegments | null = null;
+
+const INITIAL_NODES: NodeData[] = [
+  { id: 'vec-001', label: 'RevOps Engine', x: -0.5, y: 1.5, z: -1.2, category: 'Infrastructure' },
+  { id: 'vec-002', label: 'BioMesh Telemetry', x: 0.5, y: 1.5, z: -1.2, category: 'Biometrics' },
+  { id: 'vec-003', label: 'Zero-Trust Protocol', x: 1.2, y: 1.1, z: -1.8, category: 'Governance' },
+  { id: 'vec-004', label: 'AST Code Graph', x: -1.2, y: 1.0, z: -1.8, category: 'GraphWard' },
+];
+
+// 5. Dynamic Constellations
+function buildConstellations() {
+  if (constellationLines) scene.remove(constellationLines);
+
+  const points: THREE.Vector3[] = [];
+  const maxDistance = 2.2;
+
+  for (let i = 0; i < nodeMeshes.length; i++) {
+    for (let j = i + 1; j < nodeMeshes.length; j++) {
+      const p1 = nodeMeshes[i].position;
+      const p2 = nodeMeshes[j].position;
+      if (p1.distanceTo(p2) <= maxDistance) {
+        points.push(p1.clone(), p2.clone());
+      }
+    }
   }
 
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+  const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+  const lineMaterial = new THREE.LineBasicMaterial({
+    color: 0x0088ff,
+    transparent: true,
+    opacity: 0.35
+  });
+
+  constellationLines = new THREE.LineSegments(lineGeometry, lineMaterial);
+  scene.add(constellationLines);
 }
+
+// 6. Spawn Node Helper
+function spawnNode(node: NodeData, isNew = false) {
+  const geometry = new THREE.SphereGeometry(node.isSynthesized ? 0.22 : 0.18, 24, 24);
+  const material = new THREE.MeshStandardMaterial({
+    color: node.isSynthesized ? 0xff00ea : 0x00ff88,
+    wireframe: true,
+    roughness: 0.2,
+    metalness: 0.9
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(node.x, node.y, node.z);
+  mesh.userData = node;
+
+  if (isNew) {
+    mesh.scale.set(0.1, 0.1, 0.1);
+  }
+
+  scene.add(mesh);
+  nodeMeshes.push(mesh);
+  buildConstellations();
+  return mesh;
+}
+
+// 7. Node Collision & AI Synthesis
+async function triggerSynthesis(meshA: THREE.Mesh, meshB: THREE.Mesh) {
+  const dataA = meshA.userData as NodeData;
+  const dataB = meshB.userData as NodeData;
+
+  const pairKey = [dataA.id, dataB.id].sort().join('::');
+  if (activeCollisions.has(pairKey)) return;
+  activeCollisions.add(pairKey);
+
+  infoCard.innerHTML = `<strong style="color:#ffaa00;">Synthesizing Concept...</strong><br/>Merging ${dataA.label} + ${dataB.label}`;
+
+  const midPoint = new THREE.Vector3().addVectors(meshA.position, meshB.position).multiplyScalar(0.5);
+
+  let synthResult: NodeData = {
+    id: `synth-${Date.now()}`,
+    label: `${dataA.label} × ${dataB.label}`,
+    x: midPoint.x,
+    y: midPoint.y,
+    z: midPoint.z,
+    category: 'AI Synthesizer',
+    isSynthesized: true
+  };
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/synthesize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ node_a_id: dataA.id, node_b_id: dataB.id })
+    });
+    if (res.ok) {
+      const apiData = await res.json();
+      if (apiData.label) synthResult.label = apiData.label;
+    }
+  } catch (err) {
+    console.warn('Backend endpoint offline, spawning spatial fallback', err);
+  }
+
+  spawnNode(synthResult, true);
+  infoCard.innerHTML = `<strong style="color:#ff00ea;">Synthesized: ${synthResult.label}</strong><br/>Created at [${midPoint.x.toFixed(2)}, ${midPoint.y.toFixed(2)}, ${midPoint.z.toFixed(2)}]`;
+}
+
+function checkNodeCollisions() {
+  const collisionThreshold = 0.35;
+  for (let i = 0; i < nodeMeshes.length; i++) {
+    for (let j = i + 1; j < nodeMeshes.length; j++) {
+      const dist = nodeMeshes[i].position.distanceTo(nodeMeshes[j].position);
+      if (dist < collisionThreshold) {
+        triggerSynthesis(nodeMeshes[i], nodeMeshes[j]);
+      }
+    }
+  }
+}
+
+// 8. Unified Pointer Handling
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let draggedMesh: THREE.Mesh | null = null;
+
+function updatePointerCoords(e: PointerEvent) {
+  pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+}
+
+function onPointerDown(e: PointerEvent) {
+  updatePointerCoords(e);
+  raycaster.setFromCamera(pointer, camera);
+  const intersects = raycaster.intersectObjects(nodeMeshes);
+  if (intersects.length > 0) {
+    draggedMesh = intersects[0].object as THREE.Mesh;
+    controls.enabled = false;
+  }
+}
+
+function onPointerMove(e: PointerEvent) {
+  if (!draggedMesh) return;
+  updatePointerCoords(e);
+  raycaster.setFromCamera(pointer, camera);
+  const targetPos = new THREE.Vector3();
+  raycaster.ray.at(2.2, targetPos);
+  draggedMesh.position.copy(targetPos);
+  buildConstellations();
+}
+
+function onPointerUp() {
+  draggedMesh = null;
+  controls.enabled = true;
+}
+
+window.addEventListener('pointerdown', onPointerDown);
+window.addEventListener('pointermove', onPointerMove);
+window.addEventListener('pointerup', onPointerUp);
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-const orbitTarget = new THREE.Vector3(0, 0, -0.1);
-camera.lookAt(orbitTarget);
+// 9. Quest Hand Pinches
+function checkHandPinches(hand: THREE.Group) {
+  const joints = (hand as any).joints;
+  if (!joints || !joints['index-finger-tip'] || !joints['thumb-tip']) return;
 
-animate();
+  const indexTip = joints['index-finger-tip'].position;
+  const thumbTip = joints['thumb-tip'].position;
+  const pinchDistance = indexTip.distanceTo(thumbTip);
 
-firstNode.setSemanticVector([1, 0.3, 0.6]);
-secondNode.setSemanticVector([0.8, 1, 0.28]);
-thirdNode.setSemanticVector([0.2, 0.7, 1]);
+  if (pinchDistance < 0.03) {
+    const pinchMidpoint = new THREE.Vector3().addVectors(indexTip, thumbTip).multiplyScalar(0.5);
+    for (const mesh of nodeMeshes) {
+      if (mesh.position.distanceTo(pinchMidpoint) < 0.25) {
+        mesh.position.copy(pinchMidpoint);
+        buildConstellations();
+        break;
+      }
+    }
+  }
+}
 
-console.info('Cognitive Gravity runtime initialized.');
+INITIAL_NODES.forEach((n) => spawnNode(n));
+
+// 10. Frame-Rate Scaled Loop
+renderer.setAnimationLoop(() => {
+  const delta = Math.min(clock.getDelta(), 0.1);
+
+  nodeMeshes.forEach((mesh) => {
+    mesh.rotation.y += 0.5 * delta;
+    mesh.rotation.x += 0.25 * delta;
+    if ((mesh.userData as NodeData).isSynthesized && mesh.scale.x < 1.0) {
+      mesh.scale.addScalar(2.0 * delta);
+    }
+  });
+
+  if (renderer.xr.isPresenting) {
+    checkHandPinches(hand1);
+    checkHandPinches(hand2);
+  }
+
+  checkNodeCollisions();
+  controls.update();
+  renderer.render(scene, camera);
+});
