@@ -79,6 +79,24 @@ flowchart TB
 
 ---
 
+---
+## Technical Challenges & Solutions
+
+### 1. WebXR Hand-Tracking Jitter vs. Intentional Pinch
+Bare-hand tracking via the WebXR API introduces high-frequency spatial micro-jitters, leading to false-positive gesture triggers and unstable UI node positioning.
+* **Solution:** Implemented Exponential Moving Average (EMA) coordinate smoothing to attenuate noise across continuous spatial vectors:
+  $$\hat{\mathbf{p}}_t = \alpha \cdot \mathbf{p}_t + (1 - \alpha) \cdot \hat{\mathbf{p}}_{t-1}$$
+  Synthesis collisions are strictly gated by a 4 cm spatial distance threshold ($d \le 0.04\text{m}$) computed between active node centers.
+
+### 2. Sub-Second Volumetric Latency in 90 FPS VR
+VR rendering demands a locked 90 FPS main loop. Waiting synchronously for LLM reasoning leads to dropped frames and motion discomfort.
+* **Solution:** Architected an asynchronous event-driven pipeline between Three.js and a FastAPI backend deployed on Google Cloud Run. By routing inference through Groq's high-throughput Llama-3.3-70B-Versatile engine, the client fetches and instantiates child nodes with structured $3\text{D}$ coordinates without blocking the WebXR render thread.
+
+### 3. Deterministic 3D Coordinate Generation
+LLMs natively return freeform conversational text, whereas spatial graphs require exact numeric positions $(x, y, z \in \mathbb{R}^3)$ in virtual workspace coordinates.
+* **Solution:** Engineered strict JSON Schema outputs and systemic prompt constraints, forcing Llama 3.3 to return deterministic spatial coordinates and node payloads that map directly into Three.js object vectors.
+---
+
 ## 🚀 Local Development
 
 ### 1. Environment Setup
