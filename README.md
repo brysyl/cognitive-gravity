@@ -33,55 +33,49 @@ Cognitive Gravity operates on a unified, single-domain microservice architecture
 
 ---
 
+## 📐 System Architecture Diagram
+```mermaid
 flowchart TB
-    classDef client fill:#1E293B,stroke:#38BDF8,stroke-width:2px,color:#fff
-    classDef cloud fill:#0F172A,stroke:#818CF8,stroke-width:2px,color:#fff
-    classDef ai fill:#064E3B,stroke:#34D399,stroke-width:2px,color:#fff
-    classDef repo fill:#27272A,stroke:#A1A1AA,stroke-width:2px,color:#fff
-
     subgraph Repository ["GitHub Monorepo (Brysyl/cognitive-gravity)"]
         direction LR
-        FE_Code["/cognitive-gravity-webxr<br/>(Three.js / WebXR Frontend)"]
-        BE_Code["/cognitive-gravity-backend<br/>(FastAPI / Python Backend)"]
+        FE_Code["/cognitive-gravity-webxr (WebXR Frontend)"]
+        BE_Code["/cognitive-gravity-backend (FastAPI Backend)"]
     end
-    class Repository repo
 
     subgraph Client ["Client Interface (Meta Quest / WebXR Browser)"]
         direction TB
-        UI["WebXR Spatial UI<br/>(Three.js Engine)"]
-        Gesture["Gesture Engine<br/>(Pinch-to-Synthesize, 4cm threshold)"]
-        Debug["Visual Debugging<br/>(Coordinate Spheres)"]
+        UI["WebXR Spatial UI (Three.js Engine)"]
+        Gesture["Gesture Engine (Pinch-to-Synthesize, 4cm threshold)"]
+        Debug["Visual Debugging (Coordinate Spheres)"]
         
         Gesture --> UI
         Debug --> UI
     end
-    class Client client
 
     subgraph GCP ["Google Cloud Platform (Cloud Run)"]
         direction TB
-        Container["Docker Container<br/>(python:3.11-slim)"]
-        ASGI["ASGI Server<br/>(Uvicorn on $PORT)"]
-        FastAPI["FastAPI App<br/>(Synthesis Core Routing)"]
+        Container["Docker Container (python:3.11-slim)"]
+        ASGI["ASGI Server (Uvicorn on PORT)"]
+        FastAPI["FastAPI App (Synthesis Core Routing)"]
         
         Container --> ASGI
         ASGI --> FastAPI
     end
-    class GCP cloud
 
     subgraph AI ["AI Inference Engine"]
         direction TB
-        Groq["Groq API Endpoint<br/>(https://api.groq.com/openai/v1)"]
-        Llama["Meta Llama-3.3-70B-Versatile<br/>(Strictly Meta Llama-Only)"]
+        Groq["Groq API Endpoint ([api.groq.com/openai/v1](https://api.groq.com/openai/v1))"]
+        Llama["Meta Llama-3.3-70B-Versatile (Strictly Meta Llama-Only)"]
         
         Groq --> Llama
     end
-    class AI ai
 
     FE_Code -.->|Deploys to| Client
     BE_Code -.->|Builds & Deploys to| GCP
 
-    UI <==>|HTTPS / REST API| FastAPI
-    FastAPI <==>|Environment Variables & API Key Auth| Groq
+    UI <-->|HTTPS / REST API| FastAPI
+    FastAPI <-->|Env Vars & API Key Auth| Groq
+```
 
 ---
 
