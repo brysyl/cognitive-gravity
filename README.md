@@ -88,9 +88,12 @@ Bare-hand tracking via the WebXR API introduces high-frequency spatial micro-jit
 
 * **Solution:** Implemented Exponential Moving Average (EMA) coordinate smoothing to attenuate noise across continuous spatial vectors:
 
-  $$\hat{\mathbf{p}}_t = \alpha \cdot \mathbf{p}_t + (1 - \alpha) \cdot \hat{\mathbf{p}}_{t-1}$$
+$$
+\hat{\mathbf{p}}_t = \alpha \cdot \mathbf{p}_t + (1 - \alpha) \cdot \hat{\mathbf{p}}_{t-1}
+$$
 
-  Synthesis collisions are strictly gated by a 4 cm spatial distance threshold ($d \le 0.04\text{m}$) computed between active node centers.
+Synthesis collisions are strictly gated by a 4 cm spatial distance threshold ($d \le 0.04\text{ m}$) computed between active node centers.
+
 
 
 ### 2. Sub-Second Volumetric Latency in 90 FPS VR
