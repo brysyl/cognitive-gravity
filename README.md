@@ -112,7 +112,7 @@ LLMs natively return freeform conversational text, whereas spatial graphs requir
 ### 1. Environment Setup
 Clone the repository and configure your environment variables:
 ```bash
-git clone [https://github.com/brysyl/cognitive-gravity.git](https://github.com/brysyl/cognitive-gravity.git)
+git clone https://github.com/brysyl/cognitive-gravity.git
 cd cognitive-gravity
 cp .env.example .env
 
