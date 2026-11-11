@@ -27,7 +27,8 @@ Cognitive Gravity operates on a unified, single-domain microservice architecture
 * **Backend:** FastAPI with robust WebSocket orchestration and exponential backoff.
 * **AI Orchestration:** Meta Llama via HTTP API for semantic node synthesis.
 * **Vector Memory:** Supabase (PostgreSQL + pgvector) for persistent spatial embeddings.
-* **Infrastructure:** GitHub Actions CI/CD pipelines deploying to Netlify (Frontend), Google Cloud Run (Primary Backend), and render (Secondary Backend). 
+* **Infrastructure:** GitHub Actions CI/CD pipelines deploying to Netlify (Frontend), Google Cloud Run (Primary Backend), and render (Secondary Backend). This is to insure that the application stays online and operational during judging phase, (Reasons: Low Google cloud credits).
+
 
 ---
 
